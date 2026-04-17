@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if product else 'Nuevo' }} Producto — Gemsistem{% endblock %}
+{% block content %}
+<div class="admin-layout">
+    <div class="admin-sidebar">
+        <h2>⚙️ Panel Admin</h2>
+        <nav class="admin-nav">
+            <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-item">📦 Productos</a>
+            <a href="{{ url_for('admin_new_product') }}" class="admin-nav-item active">➕ Nuevo Producto</a>
+            <a href="{{ url_for('index') }}" class="admin-nav-item">🌐 Ver Tienda</a>
+            <a href="{{ url_for('admin_logout') }}" class="admin-nav-item logout">🚪 Cerrar Sesión</a>
+        </nav>
+    </div>
+
+    <div class="admin-main">
+        <div class="admin-header">
+            <h1>{{ 'Editar Producto' if product else 'Nuevo Producto' }}</h1>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn-back">← Volver</a>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" class="product-form">
+            <div class="form-grid">
+                <div class="form-col">
+                    <div class="form-group">
+                        <label>Título del producto / servicio *</label>
+                        <input type="text" name="title" required value="{{ product.title if product else '' }}" placeholder="Ej: Página Web Empresarial Profesional">
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción completa *</label>
+                        <textarea name="description" rows="7" required placeholder="Describe detalladamente el producto o servicio, características, qué incluye, tiempos de entrega...">{{ product.description if product else '' }}</textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Precio (USD) *</label>
+                            <input type="number" name="price" step="0.01" required value="{{ product.price if product else '' }}" placeholder="150">
+                        </div>
+                        <div class="form-group">
+                            <label>Precio original (tachado)</label>
+                            <input type="number" name="original_price" step="0.01" value="{{ product.original_price if product and product.original_price else '' }}" placeholder="200">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Categoría</label>
+                        <select name="category_id">
+                            <option value="">Sin categoría</option>
+                            {% for cat in categories %}
+                            <option value="{{ cat.id }}" {% if product and product.category_id == cat.id %}selected{% endif %}>{{ cat.icon }} {{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-checkboxes">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="featured" {% if product and product.featured %}checked{% endif %}>
+                            <span>⭐ Marcar como destacado</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="active" {% if not product or product.active %}checked{% endif %}>
+                            <span>✅ Producto activo (visible)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-col">
+                    <div class="form-group">
+                        <label>Imágenes del producto</label>
+                        <div class="upload-zone" id="uploadZone">
+                            <input type="file" name="images" multiple accept="image/*" id="imgInput" style="display:none">
+                            <div onclick="document.getElementById('imgInput').click()" style="cursor:pointer">
+                                <div style="font-size:48px">📸</div>
+                                <p>Clic para subir imágenes</p>
+                                <small>PNG, JPG, WEBP — Múltiples imágenes permitidas</small>
+                            </div>
+                        </div>
+                        <div id="previewZone" class="preview-zone"></div>
+
+                        {% if product and product.get_images() %}
+                        <div class="existing-images">
+                            <h4>Imágenes actuales</h4>
+                            <div class="existing-grid">
+                                {% for img in product.get_images() %}
+                                <div class="existing-img" id="img-{{ loop.index }}">
+                                    <img src="{{ url_for('static', filename='uploads/' + img) }}" alt="">
+                                    <button type="button" onclick="removeExistingImg('{{ img }}', {{ product.id }}, 'img-{{ loop.index }}')" class="remove-img">×</button>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-submit">
+                <button type="submit" class="btn-submit">
+                    {{ '💾 Guardar Cambios' if product else '🚀 Publicar Producto' }}
+                </button>
+                <a href="{{ url_for('admin_dashboard') }}" class="btn-cancel">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.getElementById('imgInput').addEventListener('change', function(e) {
+    const zone = document.getElementById('previewZone');
+    zone.innerHTML = '';
+    Array.from(e.target.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+            const div = document.createElement('div');
+            div.className = 'preview-img';
+            div.innerHTML = `<img src="${ev.target.result}" alt=""><span>${file.name}</span>`;
+            zone.appendChild(div);
+        };
+        reader.readAsDataURL(file);
+    });
+});
+
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    const dt = new DataTransfer();
+    Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+    document.getElementById('imgInput').files = dt.files;
+    document.getElementById('imgInput').dispatchEvent(new Event('change'));
+});
+
+async function removeExistingImg(imgName, productId, elemId) {
+    if (!confirm('¿Eliminar esta imagen?')) return;
+    const r = await fetch('/admin/imagen/eliminar', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({product_id: productId, image: imgName})
+    });
+    if ((await r.json()).success) document.getElementById(elemId).remove();
+}
+</script>
+{% endblock %}

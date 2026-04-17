@@ -1,0 +1,21 @@
+<a href="{{ url_for('product_detail', product_id=p.id) }}" class="product-card">
+    <div class="product-img-wrap">
+        {% set imgs = p.get_images() %}
+        {% if imgs %}
+        <img src="{{ url_for('static', filename='uploads/' + imgs[0]) }}" alt="{{ p.title }}" loading="lazy">
+        {% else %}
+        <div class="product-placeholder">💎</div>
+        {% endif %}
+        {% if p.featured %}
+        <span class="featured-badge">⭐ Destacado</span>
+        {% endif %}
+    </div>
+    <div class="product-info">
+        <h3 class="product-title">{{ p.title }}</h3>
+        <p class="product-desc">{{ p.description[:80] }}{% if p.description|length > 80 %}...{% endif %}</p>
+        <div class="product-actions">
+            <span class="btn-detail">Ver detalles</span>
+            <a href="https://wa.me/573161281410?text=Hola!%20Me%20interesa:%20{{ p.title|urlencode }}" target="_blank" class="btn-wa-card" onclick="event.stopPropagation()">💬</a>
+        </div>
+    </div>
+</a>

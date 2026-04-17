@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Servicios — Gemsistem{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:50px;padding-bottom:80px">
+    <div style="text-align:center;margin-bottom:60px">
+        <div class="hero-badge" style="display:inline-block">🚀 Desarrollo Web Profesional</div>
+        <h1 style="color:var(--text-primary);font-size:2.8rem;margin:20px 0 12px">Soluciones Digitales<br><span style="color:var(--accent)">a tu Medida</span></h1>
+        <p style="color:var(--text-secondary);font-size:1.1rem">Transformamos tus ideas en productos digitales de alto impacto</p>
+    </div>
+
+    <div class="services-grid">
+        {% for svc in [
+            {'icon':'🌐','name':'Páginas Web','sub':'Diseño moderno','items':['Diseño responsive','Optimizado para SEO','Landing pages','Tiendas en línea','Portafolios y blogs'],'msg':'página web'},
+            {'icon':'📋','name':'Menús Digitales','sub':'Digitales e interactivos','items':['Menús de restaurante','Carta digital con QR','Menús por categorías','Actualización en tiempo real','Panel de administración'],'msg':'menú digital'},
+            {'icon':'🔐','name':'Login & Auth','sub':'Usuarios seguros','items':['Registro e inicio de sesión','Roles y permisos','Recuperar contraseña','Autenticación segura','Panel de usuario'],'msg':'sistema de login'},
+            {'icon':'🛒','name':'E-commerce','sub':'Tiendas en línea','items':['Catálogo de productos','Carrito de compras','Pasarela de pagos','Panel de inventario','Reportes de ventas'],'msg':'tienda en línea'},
+            {'icon':'📱','name':'Apps Móviles','sub':'iOS & Android','items':['Diseño UX/UI','Desarrollo nativo/híbrido','Push notifications','Integración de APIs','Publicación en tiendas'],'msg':'app móvil'},
+            {'icon':'📊','name':'Dashboards','sub':'Paneles de control','items':['Visualización de datos','Gráficas interactivas','Reportes automatizados','Integración de datos','Tiempo real'],'msg':'dashboard'},
+        ] %}
+        <div class="service-card">
+            <div class="service-icon">{{ svc.icon }}</div>
+            <h3>{{ svc.name }}</h3>
+            <p class="service-sub">{{ svc.sub }}</p>
+            <ul>{% for item in svc.items %}<li>{{ item }}</li>{% endfor %}</ul>
+            <a href="https://wa.me/573161281410?text=Hola!%20Me%20interesa%20un%20{{ svc.msg }}." target="_blank" class="btn-service">Cotizar ahora</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

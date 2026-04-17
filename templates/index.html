@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+{% block title %}Gemsistem — El cerebro de tu negocio{% endblock %}
+{% block content %}
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+        <div class="hero-badge">✨ Soluciones Digitales a tu Medida</div>
+        <h1>El <span class="hero-gradient">cerebro</span><br>de tu negocio</h1>
+        <p>Transformamos tus ideas en productos digitales de alto impacto. Desarrollo web profesional, menús digitales, sistemas de login y mucho más.</p>
+        <div class="hero-btns">
+            <a href="https://wa.me/573161281410?text=Hola!%20Vi%20sus%20servicios%20en%20Gemsistem%20y%20me%20interesa%20saber%20más." target="_blank" class="btn-hero-primary">💬 Consultar ahora</a>
+            <a href="{{ url_for('servicios') }}" class="btn-hero-secondary">Ver servicios</a>
+        </div>
+    </div>
+
+</section>
+
+<!-- SERVICE CARDS (like image 2) -->
+<section class="services-highlight">
+    <div class="container">
+        <h2 class="section-title">Nuestros Servicios</h2>
+        <p class="section-sub">Desarrollo Web Profesional</p>
+        <div class="services-grid">
+            <div class="service-card">
+                <div class="service-icon">🌐</div>
+                <h3>Páginas Web</h3>
+                <p class="service-sub">Diseño moderno</p>
+                <ul>
+                    <li>Diseño responsive</li>
+                    <li>Optimizado para SEO</li>
+                    <li>Landing pages</li>
+                    <li>Tiendas en línea</li>
+                    <li>Portafolios y blogs</li>
+                </ul>
+                <a href="https://wa.me/573161281410?text=Hola!%20Me%20interesa%20una%20página%20web." target="_blank" class="btn-service">Cotizar ahora</a>
+            </div>
+            <div class="service-card featured-service">
+                <div class="service-badge">⭐ Popular</div>
+                <div class="service-icon">📋</div>
+                <h3>Menús Digitales</h3>
+                <p class="service-sub">Digitales e interactivos</p>
+                <ul>
+                    <li>Menús de restaurante</li>
+                    <li>Carta digital con QR</li>
+                    <li>Menús por categorías</li>
+                    <li>Actualización en tiempo real</li>
+                    <li>Panel de administración</li>
+                </ul>
+                <a href="https://wa.me/573161281410?text=Hola!%20Me%20interesa%20un%20menú%20digital." target="_blank" class="btn-service">Cotizar ahora</a>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">🔐</div>
+                <h3>Login & Auth</h3>
+                <p class="service-sub">Usuarios seguros</p>
+                <ul>
+                    <li>Registro e inicio de sesión</li>
+                    <li>Roles y permisos</li>
+                    <li>Recuperar contraseña</li>
+                    <li>Autenticación segura</li>
+                    <li>Panel de usuario</li>
+                </ul>
+                <a href="https://wa.me/573161281410?text=Hola!%20Me%20interesa%20un%20sistema%20de%20login." target="_blank" class="btn-service">Cotizar ahora</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FEATURED PRODUCTS -->
+{% if featured %}
+<section class="products-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">💎 Productos Destacados</h2>
+            <a href="{{ url_for('index') }}" class="see-all">Ver todos →</a>
+        </div>
+        <div class="products-grid">
+            {% for p in featured %}
+            {% include 'partials/product_card.html' %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- RECENT PRODUCTS -->
+{% if recent %}
+<section class="products-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">🆕 Publicaciones Recientes</h2>
+        </div>
+        <div class="products-grid">
+            {% for p in recent %}
+            {% include 'partials/product_card.html' %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if not featured and not recent %}
+<section class="empty-state">
+    <div class="container" style="text-align:center; padding: 80px 20px;">
+        <div style="font-size: 80px; margin-bottom: 20px;">💎</div>
+        <h2 style="color: var(--text-primary); margin-bottom: 12px;">¡Bienvenido a Gemsistem!</h2>
+        <p style="color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 30px;">Próximamente encontrarás nuestros productos y servicios aquí.</p>
+        <a href="https://wa.me/573161281410" target="_blank" class="btn-hero-primary">Contáctanos</a>
+    </div>
+</section>
+{% endif %}
+
+<!-- CTA SECTION -->
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-box">
+            <h2>¿Listo para digitalizar tu negocio?</h2>
+            <p>Escríbenos y recibe una consulta gratuita. Somos el cerebro que necesita tu empresa.</p>
+            <div class="cta-btns">
+                <a href="https://wa.me/573161281410?text=Hola!%20Quiero%20una%20consulta%20gratuita." target="_blank" class="btn-cta-wa">
+                    📱 WhatsApp: 316 128 1410
+                </a>
+                <a href="mailto:gemsistem95@gmail.com" class="btn-cta-email">
+                    📧 gemsistem95@gmail.com
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

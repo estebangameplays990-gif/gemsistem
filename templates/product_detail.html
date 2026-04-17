@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.title }} — Gemsistem{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:30px">
+
+    <div class="breadcrumb">
+        <a href="{{ url_for('index') }}">Inicio</a> › 
+        {% if product.category %}
+        <a href="{{ url_for('category', cat_id=product.category_id) }}">{{ product.category.name }}</a> › 
+        {% endif %}
+        {{ product.title }}
+    </div>
+
+    <div class="detail-layout">
+        <!-- GALLERY -->
+        <div class="detail-gallery">
+            {% set imgs = product.get_images() %}
+            {% if imgs %}
+            <div class="main-img-wrap">
+                <img src="{{ url_for('static', filename='uploads/' + imgs[0]) }}" alt="{{ product.title }}" id="mainImg">
+                {% if product.get_discount() > 0 %}
+                <span class="discount-badge big">-{{ product.get_discount() }}%</span>
+                {% endif %}
+            </div>
+            {% if imgs|length > 1 %}
+            <div class="thumb-row">
+                {% for img in imgs %}
+                <img src="{{ url_for('static', filename='uploads/' + img) }}" alt="" class="thumb {% if loop.first %}active{% endif %}" onclick="switchImg(this, '{{ url_for('static', filename='uploads/' + img) }}')">
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="main-img-wrap product-placeholder-lg">💎</div>
+            {% endif %}
+        </div>
+
+        <!-- INFO -->
+        <div class="detail-info">
+            {% if product.category %}
+            <span class="detail-cat">{{ product.category.icon }} {{ product.category.name }}</span>
+            {% endif %}
+            <h1 class="detail-title">{{ product.title }}</h1>
+
+            <div class="detail-divider"></div>
+
+            <div class="detail-desc">
+                <h3>Descripción</h3>
+                <p>{{ product.description }}</p>
+            </div>
+
+            <div class="contact-box">
+                <h3>¿Te interesa? Contáctanos</h3>
+                <p>Respuesta inmediata por WhatsApp o correo electrónico</p>
+                <div class="contact-btns">
+                    <a href="https://wa.me/573161281410?text=Hola!%20Me%20interesa%20este%20servicio:%20{{ product.title|urlencode }}%0A%0APor%20favor%20dame%20más%20información." target="_blank" class="btn-contact-wa">
+                        💬 WhatsApp: 316 128 1410
+                    </a>
+                    <a href="mailto:gemsistem95@gmail.com?subject=Interés en: {{ product.title }}&body=Hola! Me interesa el siguiente servicio: {{ product.title }}. Por favor dame más información." class="btn-contact-email">
+                        📧 Enviar correo
+                    </a>
+                </div>
+                <div class="contact-guarantee">
+                    <span>✅ Sin compromiso</span>
+                    <span>⚡ Respuesta rápida</span>
+                    <span>🔒 Comunicación segura</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RELATED -->
+    {% if related %}
+    <section class="products-section" style="margin-top:60px">
+        <div class="section-header">
+            <h2 class="section-title">Servicios relacionados</h2>
+        </div>
+        <div class="products-grid">
+            {% for p in related %}
+            {% include 'partials/product_card.html' %}
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+
+<script>
+function switchImg(el, src) {
+    document.getElementById('mainImg').src = src;
+    document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Búsqueda: {{ q }} — Gemsistem{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:30px">
+    <h2 style="color:var(--text-primary);margin-bottom:8px">
+        {% if q %}Resultados para: <span style="color:var(--accent)">"{{ q }}"</span>{% else %}Buscar productos{% endif %}
+    </h2>
+    {% if products %}
+    <p style="color:var(--text-secondary);margin-bottom:30px">{{ products|length }} resultado(s) encontrado(s)</p>
+    <div class="products-grid">
+        {% for p in products %}{% include 'partials/product_card.html' %}{% endfor %}
+    </div>
+    {% elif q %}
+    <div style="text-align:center;padding:80px 20px;color:var(--text-secondary)">
+        <div style="font-size:60px;margin-bottom:20px">🔍</div>
+        <h3>No encontramos resultados para "{{ q }}"</h3>
+        <p>Intenta con otros términos o contáctanos directamente.</p>
+        <a href="https://wa.me/573161281410" target="_blank" class="btn-hero-primary" style="display:inline-block;margin-top:20px">💬 Pregúntanos</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

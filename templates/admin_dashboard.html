@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Panel Admin — Gemsistem{% endblock %}
+{% block content %}
+<div class="admin-layout">
+    <div class="admin-sidebar">
+        <h2>⚙️ Panel Admin</h2>
+        <nav class="admin-nav">
+            <a href="{{ url_for('admin_dashboard') }}" class="admin-nav-item active">📦 Productos</a>
+            <a href="{{ url_for('admin_new_product') }}" class="admin-nav-item">➕ Nuevo Producto</a>
+            <a href="{{ url_for('index') }}" class="admin-nav-item">🌐 Ver Tienda</a>
+            <a href="{{ url_for('admin_logout') }}" class="admin-nav-item logout">🚪 Cerrar Sesión</a>
+        </nav>
+
+        <div class="admin-cat-section">
+            <h3>Categorías</h3>
+            <div id="catList">
+                {% for cat in categories %}
+                <div class="cat-tag" data-id="{{ cat.id }}">
+                    {{ cat.icon }} {{ cat.name }}
+                    <button onclick="deleteCategory({{ cat.id }})" class="cat-del">×</button>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="add-cat-form">
+                <input type="text" id="newCatName" placeholder="Nueva categoría..." style="flex:1">
+                <input type="text" id="newCatIcon" placeholder="🏷️" style="width:50px; text-align:center">
+                <button onclick="addCategory()" class="btn-add-cat">+</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="admin-main">
+        <div class="admin-header">
+            <h1>Gestión de Productos</h1>
+            <a href="{{ url_for('admin_new_product') }}" class="btn-new-product">+ Nuevo Producto</a>
+        </div>
+
+        <div class="admin-stats">
+            <div class="astat"><span>{{ products|length }}</span><p>Productos totales</p></div>
+            <div class="astat"><span>{{ products|selectattr('active')|list|length }}</span><p>Activos</p></div>
+            <div class="astat"><span>{{ products|selectattr('featured')|list|length }}</span><p>Destacados</p></div>
+        </div>
+
+        {% if products %}
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Imagen</th>
+                        <th>Título</th>
+                        <th>Precio</th>
+                        <th>Categoría</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products %}
+                    <tr>
+                        <td>
+                            {% set imgs = product.get_images() %}
+                            {% if imgs %}
+                            <img src="{{ url_for('static', filename='uploads/' + imgs[0]) }}" alt="" style="width:60px;height:60px;object-fit:cover;border-radius:8px;">
+                            {% else %}
+                            <div style="width:60px;height:60px;background:#1a2a4a;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px">💎</div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>{{ product.title }}</strong><br>
+                            <small style="color:#8899aa">{{ product.description[:60] }}...</small>
+                        </td>
+                        <td>
+                            <strong style="color:#00d4ff">${{ "%.0f"|format(product.price) }}</strong>
+                            {% if product.original_price %}
+                            <br><small style="text-decoration:line-through;color:#666">${{ "%.0f"|format(product.original_price) }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ product.category.name if product.category else '—' }}</td>
+                        <td>
+                            <span class="status-badge {{ 'active' if product.active else 'inactive' }}">
+                                {{ '✅ Activo' if product.active else '⏸️ Inactivo' }}
+                            </span>
+                            {% if product.featured %}<br><span class="featured-tag">⭐ Destacado</span>{% endif %}
+                        </td>
+                        <td class="action-btns">
+                            <a href="{{ url_for('admin_edit_product', product_id=product.id) }}" class="btn-edit">✏️ Editar</a>
+                            <button onclick="deleteProduct({{ product.id }})" class="btn-delete">🗑️ Eliminar</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div style="text-align:center;padding:80px;color:#8899aa">
+            <div style="font-size:60px;margin-bottom:20px">📦</div>
+            <h3>No hay productos aún</h3>
+            <a href="{{ url_for('admin_new_product') }}" class="btn-new-product" style="display:inline-block;margin-top:20px">+ Crear primer producto</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+async function deleteProduct(id) {
+    if (!confirm('¿Eliminar este producto?')) return;
+    const r = await fetch(`/admin/producto/eliminar/${id}`, {method:'POST'});
+    if ((await r.json()).success) location.reload();
+}
+
+async function addCategory() {
+    const name = document.getElementById('newCatName').value.trim();
+    const icon = document.getElementById('newCatIcon').value.trim() || '💎';
+    if (!name) return;
+    const r = await fetch('/admin/categoria/nueva', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({name, icon})
+    });
+    if ((await r.json()).success) location.reload();
+}
+
+async function deleteCategory(id) {
+    if (!confirm('¿Eliminar categoría?')) return;
+    const r = await fetch(`/admin/categoria/eliminar/${id}`, {method:'POST'});
+    if ((await r.json()).success) location.reload();
+}
+</script>
+{% endblock %}

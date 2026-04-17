@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gemsistem — El cerebro de tu negocio{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;800&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="nav-container">
+        <a href="{{ url_for('index') }}" class="nav-logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Gemsistem" class="logo-img">
+            <div class="logo-text">
+                <span class="logo-name">Gemsistem</span>
+                <span class="logo-tagline">El cerebro de tu negocio</span>
+            </div>
+        </a>
+
+        <form class="nav-search" action="{{ url_for('search') }}" method="get">
+            <input type="text" name="q" placeholder="Buscar servicios y productos..." value="{{ request.args.get('q', '') }}">
+            <button type="submit">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            </button>
+        </form>
+
+        <div class="nav-actions">
+            <a href="{{ url_for('servicios') }}" class="nav-link">Servicios</a>
+            <a href="https://wa.me/573161281410" target="_blank" class="btn-whatsapp">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M11.999 2C6.477 2 2 6.477 2 12c0 1.89.525 3.656 1.438 5.168L2 22l4.998-1.374A9.96 9.96 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 11.999 2z"/></svg>
+                WhatsApp
+            </a>
+            {% if session.get('admin_logged_in') %}
+            <a href="{{ url_for('admin_dashboard') }}" class="btn-admin">Panel Admin</a>
+            <a href="{{ url_for('admin_logout') }}" class="btn-logout">Salir</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Category bar -->
+    <div class="cat-bar">
+        <div class="cat-container">
+            <a href="{{ url_for('index') }}" class="cat-item">🏠 Inicio</a>
+            {% for cat in categories if categories is defined %}
+            <a href="{{ url_for('category', cat_id=cat.id) }}" class="cat-item">{{ cat.icon }} {{ cat.name }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="flash-zone">
+    {% for cat, msg in messages %}
+    <div class="flash flash-{{ cat }}">{{ msg }} <button onclick="this.parentElement.remove()">×</button></div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<main class="main-content">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="footer-container">
+        <div class="footer-brand">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Gemsistem" style="height:60px">
+            <p>El cerebro de tu negocio</p>
+            <p>Transformamos tus ideas en productos digitales de alto impacto</p>
+        </div>
+        <div class="footer-links">
+            <h4>Servicios</h4>
+            <a href="#">Páginas Web</a>
+            <a href="#">Menús Digitales</a>
+            <a href="#">Login & Auth</a>
+            <a href="#">E-commerce</a>
+        </div>
+        <div class="footer-contact">
+            <h4>Contáctanos</h4>
+            <a href="mailto:gemsistem95@gmail.com">📧 gemsistem95@gmail.com</a>
+            <a href="https://wa.me/573161281410" target="_blank">📱 +57 316 128 1410</a>
+            <div class="footer-social">
+                <a href="https://wa.me/573161281410" target="_blank" class="social-btn wa">WhatsApp</a>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <p>© 2024 Gemsistem — Todos los derechos reservados</p>
+        <a href="{{ url_for('admin_login') }}" style="color:#ffffff22; font-size:11px">admin</a>
+    </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
