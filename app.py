@@ -7,8 +7,16 @@ import uuid
 from datetime import datetime
 
 app = Flask(__name__)
-app.secret_key = 'gemsistem_secret_2024_xK9mP'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///gemsistem.db'
+app.secret_key = os.environ.get('SECRET_KEY', 'gemsistem_secret_2024_xK9mP')
+
+# ─── BASE DE DATOS ────────────────────────────────────────────────────
+# En Render usa DATABASE_URL (PostgreSQL). En local usa SQLite como fallback.
+DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///gemsistem.db')
+# Render entrega URLs con prefijo "postgres://" pero SQLAlchemy necesita "postgresql://"
+if DATABASE_URL.startswith('postgres://'):
+    DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max
@@ -33,19 +41,19 @@ class Product(db.Model):
     description = db.Column(db.Text, nullable=False)
     price = db.Column(db.Float, nullable=False)
     original_price = db.Column(db.Float, nullable=True)
-    images = db.Column(db.Text, default='')  # JSON-like comma-separated paths
+    images = db.Column(db.Text, default='')  # comma-separated paths
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=True)
     featured = db.Column(db.Boolean, default=False)
     active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     whatsapp = db.Column(db.String(20), default='3161281410')
     email = db.Column(db.String(100), default='gemsistem95@gmail.com')
-    
+
     def get_images(self):
         if self.images:
             return [img.strip() for img in self.images.split(',') if img.strip()]
         return []
-    
+
     def get_discount(self):
         if self.original_price and self.original_price > self.price:
             return int(((self.original_price - self.price) / self.original_price) * 100)
@@ -57,6 +65,22 @@ def allowed_file(filename):
 def is_admin():
     return session.get('admin_logged_in', False)
 
+# ─── INICIALIZAR BD Y CARPETAS AL ARRANCAR ────────────────────────────
+with app.app_context():
+    db.create_all()
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    if not Category.query.first():
+        for name, icon in [
+            ('Páginas Web', '🌐'),
+            ('Menús Digitales', '📋'),
+            ('Login & Auth', '🔐'),
+            ('E-commerce', '🛒'),
+            ('Apps Móviles', '📱'),
+        ]:
+            db.session.add(Category(name=name, icon=icon))
+        db.session.commit()
+
+# ─── RUTAS PÚBLICAS ───────────────────────────────────────────────────
 @app.route('/')
 def index():
     categories = Category.query.all()
@@ -93,7 +117,7 @@ def search():
 def servicios():
     return render_template('servicios.html')
 
-# ─── ADMIN ROUTES ────────────────────────────────────────────────────
+# ─── ADMIN ────────────────────────────────────────────────────────────
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
@@ -132,7 +156,7 @@ def admin_new_product():
                 filename = f"{uuid.uuid4().hex}.{ext}"
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 images_paths.append(filename)
-        
+
         product = Product(
             title=request.form['title'],
             description=request.form['description'],
@@ -163,7 +187,7 @@ def admin_edit_product(product_id):
         product.category_id = int(request.form['category_id']) if request.form.get('category_id') else None
         product.featured = 'featured' in request.form
         product.active = 'active' in request.form
-        
+
         files = request.files.getlist('images')
         new_images = []
         for file in files:
@@ -172,11 +196,11 @@ def admin_edit_product(product_id):
                 filename = f"{uuid.uuid4().hex}.{ext}"
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
                 new_images.append(filename)
-        
+
         if new_images:
             existing = product.get_images()
             product.images = ','.join(existing + new_images)
-        
+
         db.session.commit()
         flash('Producto actualizado', 'success')
         return redirect(url_for('admin_dashboard'))
@@ -230,11 +254,4 @@ def admin_delete_category(cat_id):
     return jsonify({'success': True})
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-        # Seed default categories if empty
-        if not Category.query.first():
-            for name, icon in [('Páginas Web', '🌐'), ('Menús Digitales', '📋'), ('Login & Auth', '🔐'), ('E-commerce', '🛒'), ('Apps Móviles', '📱')]:
-                db.session.add(Category(name=name, icon=icon))
-            db.session.commit()
     app.run(debug=True, port=5000)
