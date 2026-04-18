@@ -16,19 +16,81 @@
         <div class="detail-gallery">
             {% set imgs = product.get_images() %}
             {% if imgs %}
-            <div class="main-img-wrap">
-                <img src="{{ url_for('static', filename='uploads/' + imgs[0]) }}" alt="{{ product.title }}" id="mainImg">
+
+            <!-- Imagen principal — se ve COMPLETA, sin recorte -->
+            <div style="
+                background: var(--bg-secondary);
+                border: 1px solid var(--border);
+                border-radius: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 320px;
+                max-height: 520px;
+                position: relative;
+                overflow: hidden;
+            ">
+                <img
+                    src="{{ url_for('static', filename='uploads/' + imgs[0]) }}"
+                    alt="{{ product.title }}"
+                    id="mainImg"
+                    title="Clic para ampliar"
+                    style="
+                        width: 100%;
+                        max-height: 520px;
+                        object-fit: contain;
+                        padding: 20px;
+                        border-radius: 14px;
+                        cursor: zoom-in;
+                        display: block;
+                        transition: transform .3s ease;
+                    "
+                    onmouseover="this.style.transform='scale(1.02)'"
+                    onmouseout="this.style.transform='scale(1)'"
+                >
+
                 {% if product.get_discount() > 0 %}
-                <span class="discount-badge big">-{{ product.get_discount() }}%</span>
+                <span class="discount-badge big" style="position:absolute;top:12px;left:12px;">
+                    -{{ product.get_discount() }}%
+                </span>
                 {% endif %}
+
+                <!-- Hint: zoom -->
+                <span style="
+                    position: absolute; bottom: 12px; right: 12px;
+                    background: rgba(0,0,0,0.6); color: #fff;
+                    font-size: .72rem; padding: 4px 12px;
+                    border-radius: 20px; pointer-events: none;
+                    backdrop-filter: blur(6px); letter-spacing: .3px;
+                ">🔍 Clic para ampliar</span>
             </div>
+
+            <!-- Miniaturas -->
             {% if imgs|length > 1 %}
-            <div class="thumb-row">
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
                 {% for img in imgs %}
-                <img src="{{ url_for('static', filename='uploads/' + img) }}" alt="" class="thumb {% if loop.first %}active{% endif %}" onclick="switchImg(this, '{{ url_for('static', filename='uploads/' + img) }}')">
+                <img
+                    src="{{ url_for('static', filename='uploads/' + img) }}"
+                    alt=""
+                    class="thumb {% if loop.first %}active{% endif %}"
+                    style="
+                        width: 72px; height: 72px;
+                        object-fit: contain;
+                        background: var(--bg-secondary);
+                        border-radius: 10px;
+                        padding: 4px;
+                        border: 2px solid {{ 'var(--accent)' if loop.first else 'var(--border)' }};
+                        cursor: pointer;
+                        transition: border-color .2s, transform .2s;
+                    "
+                    onclick="switchImg(this, '{{ url_for('static', filename='uploads/' + img) }}')"
+                    onmouseover="this.style.transform='scale(1.1)'"
+                    onmouseout="this.style.transform='scale(1)'"
+                >
                 {% endfor %}
             </div>
             {% endif %}
+
             {% else %}
             <div class="main-img-wrap product-placeholder-lg">💎</div>
             {% endif %}
@@ -84,10 +146,193 @@
 </div>
 
 <script>
+// ── Cambiar imagen principal al hacer clic en miniatura ──
 function switchImg(el, src) {
     document.getElementById('mainImg').src = src;
-    document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.thumb').forEach(t => {
+        t.style.borderColor = 'var(--border)';
+        t.classList.remove('active');
+    });
+    el.style.borderColor = 'var(--accent)';
     el.classList.add('active');
 }
+
+// ── Lightbox: zoom y pantalla completa ──
+(function () {
+    const style = document.createElement('style');
+    style.textContent = `
+        #gem-lightbox {
+            display: none; position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,0.95);
+            flex-direction: column; align-items: center; justify-content: center;
+            touch-action: none;
+        }
+        #gem-lightbox.active { display: flex; }
+        #gem-lb-bar {
+            position: absolute; top: 0; left: 0; right: 0; height: 56px;
+            display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+            padding: 0 16px;
+            background: linear-gradient(to bottom, rgba(0,0,0,.75), transparent);
+        }
+        #gem-lb-bar button {
+            background: rgba(255,255,255,.12); border: none; color: #fff;
+            width: 40px; height: 40px; border-radius: 50%; font-size: 18px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: background .18s;
+        }
+        #gem-lb-bar button:hover { background: rgba(255,255,255,.28); }
+        #gem-lb-img {
+            max-width: 90vw; max-height: 85vh;
+            object-fit: contain;
+            transform-origin: center center;
+            transition: transform .2s ease;
+            cursor: grab; user-select: none; border-radius: 6px;
+        }
+        #gem-lb-img.dragging { cursor: grabbing; transition: none; }
+        .gem-lb-arrow {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(255,255,255,.12); border: none; color: #fff;
+            width: 48px; height: 48px; border-radius: 50%; font-size: 24px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: background .18s; z-index: 2;
+        }
+        .gem-lb-arrow:hover { background: rgba(255,255,255,.28); }
+        #gem-lb-prev { left: 12px; }
+        #gem-lb-next { right: 12px; }
+        #gem-lb-zoom-bar {
+            position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(0,0,0,.55); padding: 6px 18px; border-radius: 30px;
+            backdrop-filter: blur(8px);
+        }
+        #gem-lb-zoom-bar button {
+            background: none; border: none; color: #fff;
+            font-size: 22px; cursor: pointer; opacity: .85; padding: 0 4px;
+        }
+        #gem-lb-zoom-bar button:hover { opacity: 1; }
+        #gem-lb-zoom-label { color: #fff; font-size: 13px; min-width: 44px; text-align: center; font-family: sans-serif; }
+        #gem-lb-counter {
+            position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+            color: rgba(255,255,255,.6); font-size: 13px; font-family: sans-serif; letter-spacing: 1px;
+        }
+    `;
+    document.head.appendChild(style);
+
+    const lb = document.createElement('div');
+    lb.id = 'gem-lightbox';
+    lb.innerHTML = `
+        <div id="gem-lb-bar">
+            <button id="gem-lb-fs" title="Pantalla completa">⛶</button>
+            <button id="gem-lb-close" title="Cerrar">✕</button>
+        </div>
+        <img id="gem-lb-img" src="" alt="Ampliada" draggable="false">
+        <button class="gem-lb-arrow" id="gem-lb-prev">‹</button>
+        <button class="gem-lb-arrow" id="gem-lb-next">›</button>
+        <div id="gem-lb-zoom-bar">
+            <button id="gem-zout">−</button>
+            <span id="gem-lb-zoom-label">100%</span>
+            <button id="gem-zin">+</button>
+            <button id="gem-zreset" title="Restablecer">⟳</button>
+        </div>
+        <div id="gem-lb-counter"></div>
+    `;
+    document.body.appendChild(lb);
+
+    let images = [], current = 0, scale = 1, tx = 0, ty = 0, dragging = false, sx, sy;
+    const lbImg = document.getElementById('gem-lb-img');
+    const counter = document.getElementById('gem-lb-counter');
+    const zoomLbl = document.getElementById('gem-lb-zoom-label');
+    const STEP = 0.4, MIN = 1, MAX = 5;
+
+    function applyT() {
+        if (scale === 1) { tx = 0; ty = 0; }
+        lbImg.style.transform = `translate(${tx}px,${ty}px) scale(${scale})`;
+        lbImg.style.cursor = scale > 1 ? 'grab' : 'zoom-in';
+        zoomLbl.textContent = Math.round(scale * 100) + '%';
+    }
+    function resetZ() { scale = 1; tx = 0; ty = 0; applyT(); }
+    function zIn()  { scale = Math.min(scale + STEP, MAX); applyT(); }
+    function zOut() { scale = Math.max(scale - STEP, MIN); applyT(); }
+
+    function show(idx) {
+        current = idx;
+        lbImg.src = images[current];
+        counter.textContent = images.length > 1 ? `${current+1} / ${images.length}` : '';
+        document.getElementById('gem-lb-prev').style.display = images.length > 1 ? '' : 'none';
+        document.getElementById('gem-lb-next').style.display = images.length > 1 ? '' : 'none';
+        resetZ();
+    }
+
+    function open(srcs, idx) {
+        images = srcs; show(idx);
+        lb.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    function close() {
+        lb.classList.remove('active');
+        document.body.style.overflow = '';
+        if (document.fullscreenElement) document.exitFullscreen();
+    }
+
+    document.getElementById('gem-lb-close').addEventListener('click', close);
+    document.getElementById('gem-lb-prev').addEventListener('click', () => show((current - 1 + images.length) % images.length));
+    document.getElementById('gem-lb-next').addEventListener('click', () => show((current + 1) % images.length));
+    document.getElementById('gem-zin').addEventListener('click', zIn);
+    document.getElementById('gem-zout').addEventListener('click', zOut);
+    document.getElementById('gem-zreset').addEventListener('click', resetZ);
+
+    const fsBtn = document.getElementById('gem-lb-fs');
+    fsBtn.addEventListener('click', () => {
+        document.fullscreenElement ? document.exitFullscreen() : lb.requestFullscreen?.();
+    });
+    document.addEventListener('fullscreenchange', () => {
+        fsBtn.textContent = document.fullscreenElement ? '⊡' : '⛶';
+    });
+
+    lb.addEventListener('wheel', e => { e.preventDefault(); e.deltaY < 0 ? zIn() : zOut(); }, { passive: false });
+    lbImg.addEventListener('dblclick', () => scale === 1 ? (scale = 2.5, applyT()) : resetZ());
+    lb.addEventListener('click', e => { if (e.target === lb) close(); });
+
+    lbImg.addEventListener('mousedown', e => { if (scale <= 1) return; dragging = true; lbImg.classList.add('dragging'); sx = e.clientX - tx; sy = e.clientY - ty; });
+    window.addEventListener('mousemove', e => { if (!dragging) return; tx = e.clientX - sx; ty = e.clientY - sy; applyT(); });
+    window.addEventListener('mouseup', () => { dragging = false; lbImg.classList.remove('dragging'); });
+
+    document.addEventListener('keydown', e => {
+        if (!lb.classList.contains('active')) return;
+        if (e.key === 'Escape') close();
+        if (e.key === 'ArrowRight') show((current+1) % images.length);
+        if (e.key === 'ArrowLeft')  show((current-1+images.length) % images.length);
+        if (e.key === '+') zIn();
+        if (e.key === '-') zOut();
+        if (e.key === '0') resetZ();
+    });
+
+    // Conectar imagen principal y miniaturas al lightbox
+    document.addEventListener('DOMContentLoaded', () => {
+        const allImgs = () => Array.from(document.querySelectorAll('.thumb')).map(t => t.src);
+
+        document.getElementById('mainImg')?.addEventListener('click', () => {
+            const srcs = allImgs();
+            const mainSrc = document.getElementById('mainImg').src;
+            const idx = srcs.indexOf(mainSrc);
+            open(srcs.length ? srcs : [mainSrc], Math.max(idx, 0));
+        });
+
+        document.querySelectorAll('.thumb').forEach((t, i) => {
+            t.addEventListener('click', () => {
+                // switchImg ya se llama desde onclick; el lightbox espera un segundo clic
+                // Si quieres abrir con un solo clic en miniatura, descomenta:
+                // open(allImgs(), i);
+            });
+        });
+
+        // Doble clic en miniatura abre lightbox directamente
+        document.querySelectorAll('.thumb').forEach((t, i) => {
+            t.addEventListener('dblclick', () => open(allImgs(), i));
+        });
+    });
+
+    window.GemLightbox = { open, close };
+})();
 </script>
 {% endblock %}
